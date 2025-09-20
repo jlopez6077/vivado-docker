@@ -24,13 +24,18 @@ This way, I get:
 ---
 
 ## 📂 Repository Structure
-_ _ _
-|-- Dockerfile&nbsp;&nbsp;# Defines the Xilinx Docker image
-|-- image_files/&nbsp;# Supporting files (installer, scripts, assets, etc.)
-|-- launchers/    &nbsp;# Launcher scripts and .desktop files for Vivado & Vitis
-|-- xilinx_pkgs   &nbsp;# Script that starts the installation
-|-- functions     &nbsp;# Bash functions
-|-- .xilinx_pkgs_deprecated/ &nbsp;# Legacy/unused script (example of installing Xilinx toolchain directly on Arch)
+
+ Dockerfile&nbsp;&nbsp;# Defines the Xilinx Docker image
+ 
+ image_files/&nbsp;# Supporting files (installer, scripts, assets, etc.)
+ 
+ launchers/    &nbsp;# Launcher scripts and .desktop files for Vivado & Vitis
+ 
+ xilinx_pkgs   &nbsp;# Script that starts the installation
+ 
+ functions     &nbsp;# Bash functions
+ 
+ .xilinx_pkgs_deprecated/ &nbsp;# Legacy/unused script (example of installing Xilinx toolchain directly on Arch)
 
 
 ---
