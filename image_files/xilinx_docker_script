@@ -1,0 +1,16 @@
+#!/bin/bash
+# xilinx_docker_script is my own custom bash script that runs inside of the container
+# It installs the toolchain in your local system so you don't have to reinstall it every time you rebuild the Dockerfile
+
+FILE_DIR="$(dirname "$(readlink -f "$0")")"
+EXTRACTED_INSTALLER="/home/developer/Downloads/image_files/xilinx_extracted_installer"
+VIVADO_BIN="/opt/Xilinx/2025.1/Vivado/bin/vivado"
+
+set -e
+if [[ ! -x $VIVADO_BIN ]]; then
+  $EXTRACTED_INSTALLER/xsetup -b AuthTokenGen
+  $EXTRACTED_INSTALLER/xsetup -a XilinxEULA,3rdPartyEULA -b Install -c $EXTRACTED_INSTALLER/vitis_install_config.txt
+fi
+
+echo "Vivado installed"
+echo "Exiting Docker Container"

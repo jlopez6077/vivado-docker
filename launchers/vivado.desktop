@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Vivado
+Comment=Xilinx Vivado Design Suite
+Exec=kitty -e /bin/vivado
+Icon=/opt/Xilinx/2025.1/Vivado/doc/images/vivado_logo_bk.png
+Terminal=false
+Type=Application
+Categories=Development;
+

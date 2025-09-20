@@ -1,0 +1,14 @@
+#!/bin/bash
+# Runs Vivado in Docker, forwarding args
+
+xhost +local:docker # allow X11 for Docker
+
+docker run -it --rm \
+  --name xilinx-vivado \
+  -e DISPLAY=$DISPLAY \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -v /opt/Xilinx/:/opt/Xilinx \
+  -v ~/workspace:/home/developer/workspace \
+  --device /dev/bus/usb:/dev/bus/usb \
+  xilinx_docker \
+  bash -c "vivado -nolog -nojournal $*"

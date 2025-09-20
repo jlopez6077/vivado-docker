@@ -1,0 +1,91 @@
+#!/bin/bash
+# Installs fpga tool chains directly into archlinux:
+# This script is not used since I decided to go the docker route
+# However I would still like to include it
+#   - Vivado
+#   - Vitis
+
+FILE_DIR="$(dirname "$(readlink -f "$0")")"
+source "$FILE_DIR/functions"
+
+XILINX_INSTALLER_PATH="$HOME/Downloads/FPGAs_AdaptiveSoCs_Unified_SDI_2025.1_0530_0145_Lin64.bin"
+LOG="$FILE_DIR/vitis_install.log"
+INSTALL_DIR="/opt/Xilinx"
+
+WEB_BATCH_DIR="/tmp/vivado"
+
+VIVADO_PKGBUILD_URL="https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=vivado"
+VITIS_PKGBUILD_URL="https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=vitis"
+
+set -e
+log_script_start
+
+echo 'Vivado needs 32-bit libraries'
+PACMAN_CONFIG_PATH='/etc/pacman.conf'
+echo $PACMAN_CONFIG_PATH
+if ! grep -Pzo '\[multilib\]\nInclude = /etc/pacman.d/mirrorlist' $PACMAN_CONFIG_PATH; then
+  mkdir -pv /etc/.archived_config_files
+  timestamp=$(date +"%Y_%m_%d_%H%M%S")
+  sudo sed -i.$timestamp.bak '/#\[multilib\]/, /^$/ s/^#//' $PACMAN_CONFIG_PATH
+  sudo mv -v "$PACMAN_CONFIG_PATH.$timestamp.bak" /etc/.archived_config_files
+fi
+echo
+sudo pacman -Syu
+echo
+
+echo "Installing Vivado Dependiences"
+curl "$VIVADO_PKGBUILD_URL" -o /tmp/PKGBUILD/vivado
+deps=$(
+  source /tmp/PKGBUILD/vivado
+  echo ${depends[@]} ${makedepends[@]}
+)
+yay -S --needed --asdeps $deps
+echo
+
+echo "Installing Vitis Dependiences"
+curl "$VITIS_PKGBUILD_URL" -o /tmp/PKGBUILD/vitis
+vitis_deps=$(
+  source /tmp/PKGBUILD/vitis
+  echo ${depends[@]} ${makedepends[@]}
+)
+yay -S --needed --asdeps $vitis_deps
+echo
+
+echo 'Running Xilinx Installer'
+if [[ ! -f $XILINX_INSTALLER_PATH ]]; then
+  echo "Error: $XILINX_INSTALLER_PATH not found"
+  exit 1
+fi
+
+chmod +x "$XILINX_INSTALLER_PATH"
+$XILINX_INSTALLER_PATH --keep --noexec --target $WEB_BATCH_DIR
+sudo $WEB_BATCH_DIR/xsetup -b AuthTokenGen
+# if you need generate a config template
+# $WEB_BATCH_DIR/xsetup -b ConfigGen
+sudo $WEB_BATCH_DIR/xsetup -a XilinxEULA,3rdPartyEULA -b Install -c $FILE_DIR/vitis_install_config.txt
+
+# Vitis uses an older version of libstdc++.so that crashes when opened in Archlinux
+if [[ ! -f /opt/Xilinx/2025.1/Vitis/lib/lnx64.o/Default/libstdc++.so.6 ]]; then
+  sudo mv -v /opt/Xilinx/2025.1/Vitis/lib/lnx64.o/Default/libstdc++.so.6 /opt/Xilinx/2025.1/Vitis/lib/lnx64.o/Default/libstdc++.so.6.bak
+fi
+
+# Manually creating desktop entries
+if [[ ! -f /usr/share/applications/vivado.desktop ]]; then
+  sudo cp -v $FILE_DIR/vivado.desktop /usr/shar/applications/
+fi
+
+if [[ ! -f /usr/share/applications/vitis.desktop ]]; then
+  sudo cp -v $FILE_DIR/vitis.desktop /usr/shar/applications/
+fi
+
+# Add Xilinx tools to PATH
+if ! grep -Fzo "/export PATH=/opt/Xilinx/2025.1/Vivado/bin:$PATH\nexport PATH=/opt/Xilinx/2025.1/Vitis/bin:$PATH" "$HOME/.bashrc"; then
+  mkdir -pv $HOME/.bashrc
+  timestamp=$(date +"%Y_%m_%d_%H%M%S")
+  sed -i "/export PATH=/opt/Xilinx/2025.1/Vivado/bin:$PATH%M%S"
+fi
+
+export PATH=/opt/Xilinx/2025.1/Vivado/bin:$PATH
+export PATH=/opt/Xilinx/2025.1/Vitis/bin:$PATH
+
+log_script_end

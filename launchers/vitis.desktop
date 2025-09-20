@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Vitis
+Comment=Xilinx Vitis Unified Software Platform
+Exec=kitty -e /bin/vitis
+Icon=/opt/Xilinx/2025.1/Vitis/doc/images/ide_icon.png
+Terminal=false
+Type=Application
+Categories=Development;Electronics;
+

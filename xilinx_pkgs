@@ -1,0 +1,62 @@
+#!/bin/bash
+
+FILE_DIR="$(dirname "$(readlink -f "$0")")"
+INSTALLER_PATH="$HOME/Downloads/FPGAs_AdaptiveSoCs_Unified_SDI_2025.1_0530_0145_Lin64.bin"
+IMAGE_FILES_DIR="$FILE_DIR/image_files/" # DIR that will be include with Docker image
+LAUNCHER_DIR="$FILE_DIR/launchers/"
+INSTALL_DIR="/opt/Xilinx/" # Location where xilinx toolchain will be installed
+
+source "$FILE_DIR/functions"
+set -e
+
+log_script_start
+
+if [[ ! -f $INSTALLER_PATH ]]; then
+  echo "Error: Xilinx web isntaller does exist at location $INSTALLER_PATH."
+  exit 1
+fi
+
+chmod +x "$INSTALLER_PATH"
+
+$INSTALLER_PATH --noexec --keep --target $IMAGE_FILES_DIR/xilinx_extracted_installer # Extracts installer
+chmod +x $IMAGE_FILES_DIR/xilinx_docker_script
+
+docker build -t xilinx_docker .
+
+rm -rf $IMAGE_FILES_DIR/xilinx_extracted_installer
+
+xhost +local:docker # allows x11 for Docker
+
+docker run -it \
+  --rm \
+  --user root \
+  --name xilinx-vivado \
+  -e DISPLAY=$DISPLAY \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -v $INSTALL_DIR:/opt/Xilinx \
+  -v ~/workspace/playground:/home/developer/workspace \
+  --device /dev/bus/usb:/dev/bus/usb \
+  xilinx_docker \
+  bash -c "/home/developer/Downloads/image_files/xilinx_docker_script"
+
+# Adds vivado and vitis cmd to your /bin
+sudo rm -f /bin/vivado
+chmod +x $LAUNCHER_DIR/vivado_launcher
+sudo cp -v $LAUNCHER_DIR/vivado_launcher /bin/vivado
+sudo rm -f /bin/vitis
+chmod +x $LAUNCHER_DIR/vitis_launcher
+sudo cp -v $LAUNCHER_DIR/vitis_launcher /bin/vitis
+sudo rm -f /bin/xilinx_docker
+chmod +x $LAUNCHER_DIR/xilinx_docker_launcher
+sudo cp -v $LAUNCHER_DIR/xilinx_docker_launcher /bin/xilinx_docker
+
+# Manually creating desktop entries
+chmod +x $LAUNCHER_DIR/vivado.desktop
+sudo rm -f /usr/share/applications/vivado.desktop
+sudo cp -v $LAUNCHER_DIR/vivado.desktop /usr/share/applications/
+
+chmod +x $LAUNCHER_DIR/vitis.desktop
+sudo rm -f /usr/share/applications/vitis.desktop
+sudo cp -v $LAUNCHER_DIR/vitis.desktop /usr/share/applications/
+
+log_script_end
